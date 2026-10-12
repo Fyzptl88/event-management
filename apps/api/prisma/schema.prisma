@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  MUSIC
+  WORKSHOP
+  FOOD
+  SPORTS
+  KIDS
+}
+
+model User {
+  id                  String              @id @default(uuid())
+  email               String              @unique
+  passwordHash        String
+  createdAt           DateTime            @default(now())
+  favouriteCategories FavouriteCategory[]
+  reminders           Reminder[]
+  cardDesigns         CardDesign[]
+}
+
+model Event {
+  id          String       @id @default(uuid())
+  title       String
+  category    Category
+  city        String
+  startsAt    DateTime
+  price       Int
+  description String       @db.Text
+  imageUrl    String
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  reminders   Reminder[]
+  cardDesigns CardDesign[]
+
+  @@index([isActive, startsAt])
+  @@index([category])
+  @@index([city])
+}
+
+model FavouriteCategory {
+  userId   String
+  category Category
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, category])
+}
+
+model Reminder {
+  userId  String
+  eventId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+}
+
+model CardDesign {
+  userId    String
+  eventId   String
+  theme     String
+  stickers  Json
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
